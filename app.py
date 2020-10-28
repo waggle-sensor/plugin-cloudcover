@@ -10,7 +10,7 @@ from waggle.data import open_data_source
 
 TOPIC_INPUT_IMAGE = "sky_image"
 TOPIC_SAMPLE_IMAGE = "image.sky"
-TOPIC_CLOUDCOVER = "test.float.1"
+TOPIC_CLOUDCOVER = "env.coverage.cloud"
 
 plugin.init()
 
