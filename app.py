@@ -1,6 +1,7 @@
 import time
 import argparse
 
+import cv2
 import torch
 from PIL import Image
 import numpy as np
@@ -9,7 +10,6 @@ import waggle.plugin as plugin
 from waggle.data import open_data_source
 
 TOPIC_INPUT_IMAGE = "sky_image"
-TOPIC_SAMPLE_IMAGE = "image.sky"
 TOPIC_CLOUDCOVER = "env.coverage.cloud"
 
 plugin.init()
@@ -32,7 +32,7 @@ def run(args):
     # print("Cut-out confidence level is set to {:.2f}".format(args.confidence_level))
     sampling_countdown = -1
     if args.sampling_interval >= 0:
-        print("Sampling enabled -- occurs every {:d}th inferencing".format(args.sampling_interval))
+        print(f"Sampling enabled -- occurs every {args.sampling_interval}th inferencing")
         sampling_countdown = args.sampling_interval
     print("Cloud cover estimation starts...")
     while True:
@@ -49,13 +49,18 @@ def run(args):
                 score = model(tensor)
 
             ratio = model_module.postprocess(score)
-            print("{:.2f}".format(ratio))
+            plugin.publish(TOPIC_CLOUDCOVER, ratio, timestamp=timestamp)
+            if debug:
+                print(f"Cloud coverage: {ratio}")
+                print(f"Measures published")
 
             if sampling_countdown > 0:
                 sampling_countdown -= 1
             elif sampling_countdown == 0:
-                plugin.publish(TOPIC_SAMPLE_IMAGE, plugin.Image(image), timestamp=timestamp)
-                print("A sample is published to {}".format(TOPIC_SAMPLE_IMAGE))
+                cv2.imwrite('/tmp/sample.jpg', image)
+                plugin.upload_file('/tmp/sample.jpg')
+                if args.debug:
+                    print("A sample is published")
                 # Reset the count
                 sampling_countdown = args.sampling_interval
 
@@ -65,6 +70,10 @@ def run(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-debug', dest='debug',
+        action='store_true', default=False,
+        help='Debug flag')
     parser.add_argument(
         '-model', dest='model',
         action='store', default='unet_module',
