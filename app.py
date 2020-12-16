@@ -50,7 +50,7 @@ def run(args):
 
             ratio = model_module.postprocess(score)
             plugin.publish(TOPIC_CLOUDCOVER, ratio, timestamp=timestamp)
-            if debug:
+            if args.debug:
                 print(f"Cloud coverage: {ratio}")
                 print(f"Measures published")
 
